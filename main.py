@@ -5,6 +5,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
+from sklearn.metrics import confusion_matrix
 from datetime import datetime
 import os
 import shutil
@@ -124,6 +125,14 @@ def prepare_model_for_training(cnn_model):
 
 
 def train_cnn_model(cnn_model, train_images, train_labels, validation_images, validation_labels, save_directory):
+    """
+    batch size TODO
+    epochs set to 50 but the earlystopping makes it stop at about 25
+    save the best model with modelcheckpoint callback
+    earlystopping checks the validation loss and if it does not improve for 5 epochs it ends the training,
+        keeping the best weights
+    i use tensorboard for quick in browser performance checking
+    """
     cnn_model.fit(
         x=train_images, y=train_labels, batch_size=8, epochs=50,
         validation_data=(validation_images, validation_labels),
@@ -187,6 +196,13 @@ def main():
         submission_csv['label'] = test_labels
         submission_csv[['image_id', 'label']].to_csv(f'{save_directory}/submission.csv', index=False)
 
+        # get confusion matrix
+        validation = cnn_model.predict(validation_images)
+        validation_predicted_labels = np.argmax(validation, axis=1)
+        validation_real_labels = np.argmax(validation_labels, axis=1)
+        confusion_mat = confusion_matrix(validation_real_labels, validation_predicted_labels)
+        print(confusion_mat)
+
     except Exception as e:
         print('Exception in main(): ', e)
         return
@@ -194,3 +210,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+TODO:
+    more outputs of the cnn structure
+    better confusion matrix
+    change cnn layers structure 
+"""
