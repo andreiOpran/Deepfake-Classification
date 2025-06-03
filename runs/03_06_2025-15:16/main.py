@@ -125,7 +125,7 @@ def prepare_model_for_training(cnn_model):
 
 def train_cnn_model(cnn_model, train_images, train_labels, validation_images, validation_labels, save_directory):
     cnn_model.fit(
-        x=train_images, y=train_labels, batch_size=16, epochs=3,
+        x=train_images, y=train_labels, batch_size=16, epochs=1,
         validation_data=(validation_images, validation_labels),
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.h5'),
                    EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
@@ -174,9 +174,6 @@ def main():
         cnn_model = prepare_model_for_training(cnn_model)
         # train the model
         train_cnn_model(cnn_model, train_images, train_labels, validation_images, validation_labels, save_directory)
-        # get the loss and accuracy of the validation set
-        validation_loss, validation_accuracy = cnn_model.evaluate(validation_images, validation_labels, verbose=0)
-        print('Validation accuracy: ', validation_accuracy)
 
         # test the model
         test = cnn_model.predict(test_images)
