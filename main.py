@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dens
 from tensorflow.python.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import shutil
 import matplotlib.pyplot as plt
@@ -148,8 +148,14 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
                    ]
     )
 
-def get_and_create_save_directory():
-    run_time = datetime.now().strftime('%d_%m_%Y-%H:%M')  # get the run time of training to organize for submission
+
+def get_and_create_save_directory(running_on_vps=False):
+    if running_on_vps:
+        current_time_vps = datetime.now()
+        current_time_romania = current_time_vps + timedelta(hours=3)  # vps is 3h behind
+        run_time = current_time_romania.strftime('%d_%m_%Y-%H:%M')
+    else:
+        run_time = datetime.now().strftime('%d_%m_%Y-%H:%M')  # get the run time of training to organize for submission
     run_directory_path = f'runs/{run_time}'  # the file path in which this model will be saved completed with the timestamp
     os.makedirs(run_directory_path, exist_ok=True)  # create the actual directory of saving
     shutil.copy('main.py', f'{run_directory_path}/main.py')  # copy script so I can go back and look at the params
