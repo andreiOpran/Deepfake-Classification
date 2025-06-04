@@ -140,7 +140,7 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     i use tensorboard for quick in browser performance checking
     """
     cnn_model.fit(
-        x=train_images, y=train_labels, batch_size=256, epochs=50,
+        x=train_images, y=train_labels, batch_size=128, epochs=50,
         validation_data=(validation_images, validation_labels),
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
