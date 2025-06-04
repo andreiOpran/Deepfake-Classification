@@ -4,6 +4,7 @@ from PIL import Image
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input
+from tensorflow.python.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from datetime import datetime
@@ -81,27 +82,31 @@ def deepfake_classification_cnn_model():
 
     # CONVOLUTIUONAL BLOCK 1
     # layer - relu removes negative values; input_shape 100x100 w/ RGB
-    cnn_model.add(Conv2D(filters=32, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
+    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
     # pooling layer reduces dimensions - downsampling
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     # add dropout to reduce overfitting by making the model not rely on a specific feature
     cnn_model.add(Dropout(0.25))
 
     # CONVOLUTIONAL BLOCK 2
-    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 32)
+    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 64)
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.25))
 
     # CONVOLUTIONAL BLOCK 3
-    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (25, 25, 64)
+    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))  # input_shape = (25, 25, 128)
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.5))
 
-    # convert results from array to vector (of size 12 x 12 x 128 = 18432)
+    # convert results from array to vector (of size 12 x 12 x 256 = 36864)
     cnn_model.add(Flatten())
     # take all the features from the convolutional blocks and turn them into final predicitions - classifier
-    cnn_model.add(Dense(units=128, activation='relu'))
-    cnn_model.add(Dropout(0.5))  # too many weights (18432 x 128) that can cause overfitting
+    # l2 regularization to keep weights small and prevent overfitting
+    cnn_model.add(Dense(units=256, activation='relu', kernel_regularizer=l2(0.001)))
+    cnn_model.add(Dropout(0.5))  # too many weights (36864 x 256) that can cause overfitting
+    # another layer for more refining
+    cnn_model.add(Dense(units=128, activation='relu', kernel_regularizer=l2(0.001)))
+    cnn_model.add(Dropout(0.3))  # too many weights again (256 x 128)
     # the 5 classes of the deepfake classification, softmax converts scores to probs
     cnn_model.add(Dense(5, activation='softmax'))
 
