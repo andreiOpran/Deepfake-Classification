@@ -11,6 +11,7 @@ import os
 import shutil
 import matplotlib.pyplot as plt
 
+
 # check if all images in trains, validation, test have the same resolution
 def check_images_resolution():
     resolutions = set()  # we add resolutions to this set and at the end it needs to have size 1
@@ -139,9 +140,8 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
                    TensorBoard(log_dir=f'{save_directory}/TensorBoard_logs')
-        ]
+                   ]
     )
-
 
 def get_and_create_save_directory():
     run_time = datetime.now().strftime('%d_%m_%Y-%H:%M')  # get the run time of training to organize for submission
@@ -154,49 +154,67 @@ def get_and_create_save_directory():
 def main():
     try:
         # before starting, check that images are brought to a given standard
+        print(f'\n{15 * '>'} CHECKING IMAGES RESOLUTION {15 * '<'}\n')
         check_images_resolution()
 
         # load training, validation, test images and labels
+        print(f'\n{15 * '>'} LOADING IMAGES {15 * '<'}\n')
         train_images, train_labels = load_images_and_labels('train')
         validation_images, validation_labels = load_images_and_labels('validation')
         test_images, test_labels = load_images_and_labels('test')
 
         # preprocess images and labels
+        print(f'\n{15 * '>'} PREPROCESS IMAGES {15 * '<'}\n')
         train_images, train_labels = preprocess_images_and_labels(train_images, train_labels)
         validation_images, validation_labels = preprocess_images_and_labels(validation_images, validation_labels)
         test_images, test_labels = preprocess_images_and_labels(test_images)
 
-        print(f'\n{'=' * 50}')
+        print(f'\n{40 * '='} DATASET SHAPE {40 * '='}\n')
         print('Train images shape ', train_images.shape)
         print('Train labels shape ', train_labels.shape)
         print('Validation images shape ', validation_images.shape)
         print('Validation labels shape ', validation_labels.shape)
         print('Test images shape ', test_images.shape)
-        print(f'{'=' * 50}\n')
+        print(f'\n{40 * '='} DATASET SHAPE {40 * '='}\n')
 
         # create and get the file path of the save directory
         save_directory, run_time = get_and_create_save_directory()
 
         # get the model
+        print(f'\n{15 * '>'} BUILDING MODEL {15 * '<'}\n')
         cnn_model = deepfake_classification_cnn_model()
         # prepare the model
+        print(f'\n{15 * '>'} PREPARING MODEL {15 * '<'}\n')
         cnn_model = prepare_model_for_training(cnn_model)
         # train the model
+        print(f'\n{15 * '>'} TRAINING MODEL {15 * '<'}\n')
         train_cnn_model(cnn_model, train_images, train_labels, validation_images, validation_labels, save_directory)
-        # get the loss and accuracy of the validation set
+
+        # extract the training and validation accuracy and loss
+        # I am not using the value returned by the cnn_model.train(), because i have early stopping callback
+        training_loss, training_accuracy = cnn_model.evaluate(train_images, train_labels, verbose=0)
         validation_loss, validation_accuracy = cnn_model.evaluate(validation_images, validation_labels, verbose=0)
+        print(f'\n{40 * '='} CNN MODEL TRAINING EVALUATION {40 * '='}\n')
+        print('Training accuracy: ', training_accuracy)
+        print('Training loss: ', training_loss)
         print('Validation accuracy: ', validation_accuracy)
+        print('Validation loss: ', validation_loss)
+        print(f'Accuracy gap (< 0.05 - 0.1): {training_accuracy - validation_accuracy}')
+        print(f'\n{40 * '='} CNN MODEL TRAINING EVALUATION {40 * '='}\n')
 
         # test the model
+        print(f'\n{15 * '>'} TESTING MODEL {15 * '<'}\n')
         test = cnn_model.predict(test_images)
         test_labels = np.argmax(test, axis=1)
 
         # save results
+        print(f'\n{15 * '>'} SAVING RESULTS {15 * '<'}\n')
         submission_csv = pd.read_csv(f'test.csv')
         submission_csv['label'] = test_labels
         submission_csv[['image_id', 'label']].to_csv(f'{save_directory}/submission.csv', index=False)
 
         # get confusion matrix
+        print(f'\n{15 * '>'} SAVING CONFUSION MATRIX AT {save_directory}/confusion_matrix.png {15 * '<'}\n')
         validation = cnn_model.predict(validation_images)
         validation_predicted_labels = np.argmax(validation, axis=1)
         validation_real_labels = np.argmax(validation_labels, axis=1)
@@ -205,7 +223,7 @@ def main():
         plt.figure(figsize=(10, 8))
         classes = [0, 1, 2, 3, 4]
         confusion_matrix_display = ConfusionMatrixDisplay(confusion_matrix=validation_confusion_matrix, display_labels=classes)
-        confusion_matrix_display.plot(cmap='coolwarm', values_format='d')  # 'd' for integers
+        confusion_matrix_display.plot(cmap='Greens', values_format='d')  # 'd' for integers
         plt.title(f'Confusion matrix for run at {run_time}')
         plt.savefig(f'{save_directory}/confusion_matrix.png')
 
@@ -217,9 +235,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-
 """
 TODO:
-    more outputs of the cnn structure
     change cnn layers structure 
 """
