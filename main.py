@@ -5,11 +5,11 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from datetime import datetime
 import os
 import shutil
-
+import matplotlib.pyplot as plt
 
 # check if all images in trains, validation, test have the same resolution
 def check_images_resolution():
@@ -148,7 +148,7 @@ def get_and_create_save_directory():
     run_directory_path = f'runs/{run_time}'  # the file path in which this model will be saved completed with the timestamp
     os.makedirs(run_directory_path, exist_ok=True)  # create the actual directory of saving
     shutil.copy('main.py', f'{run_directory_path}/main.py')  # copy script so I can go back and look at the params
-    return run_directory_path
+    return run_directory_path, run_time  # returns run_time as well so i can use it in the confusion matrix plot title
 
 
 def main():
@@ -175,7 +175,7 @@ def main():
         print(f'{'=' * 50}\n')
 
         # create and get the file path of the save directory
-        save_directory = get_and_create_save_directory()
+        save_directory, run_time = get_and_create_save_directory()
 
         # get the model
         cnn_model = deepfake_classification_cnn_model()
@@ -200,8 +200,14 @@ def main():
         validation = cnn_model.predict(validation_images)
         validation_predicted_labels = np.argmax(validation, axis=1)
         validation_real_labels = np.argmax(validation_labels, axis=1)
-        confusion_mat = confusion_matrix(validation_real_labels, validation_predicted_labels)
-        print(confusion_mat)
+        validation_confusion_matrix = confusion_matrix(validation_real_labels, validation_predicted_labels)
+        # make a plot with heatmap for better represenation
+        plt.figure(figsize=(10, 8))
+        classes = [0, 1, 2, 3, 4]
+        confusion_matrix_display = ConfusionMatrixDisplay(confusion_matrix=validation_confusion_matrix, display_labels=classes)
+        confusion_matrix_display.plot(cmap='coolwarm', values_format='d')  # 'd' for integers
+        plt.title(f'Confusion matrix for run at {run_time}')
+        plt.savefig(f'{save_directory}/confusion_matrix.png')
 
     except Exception as e:
         print('Exception in main(): ', e)
@@ -215,6 +221,5 @@ if __name__ == "__main__":
 """
 TODO:
     more outputs of the cnn structure
-    better confusion matrix
     change cnn layers structure 
 """
