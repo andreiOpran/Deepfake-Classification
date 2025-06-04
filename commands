@@ -29,3 +29,7 @@ scp -r andreiOpran@ml-ai-ubuntu-gpu-h100x1-80gb-tor1:~/andrei/Deepfake-Classific
 # Copy both run folders
 scp -r andreiOpran@ml-ai-ubuntu-gpu-h100x1-80gb-tor1:~/andrei/Deepfake-Classification/runs/04_06_2025-14:37/ ./
 scp -r andreiOpran@ml-ai-ubuntu-gpu-h100x1-80gb-tor1:~/andrei/Deepfake-Classification/runs/04_06_2025-14:40/ ./
+
+sudo add-apt-repository ppa:deadsnakes/ppa
+apt install python3.12
+apt install python3.12-venv

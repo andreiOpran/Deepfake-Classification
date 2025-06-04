@@ -80,6 +80,11 @@ def deepfake_classification_cnn_model():
     # define shape layer
     cnn_model.add(Input(shape=(100, 100, 3)))
 
+    # i currently have overfitting so i try image augumentation
+    # for image augumentation, sizing, roations etc are first and then i do color changes,
+        # to avoid interpolation artifacts - leads to werid colors
+    cnn_model.add()
+
     # CONVOLUTIUONAL BLOCK 1
     # layer - relu removes negative values; input_shape 100x100 w/ RGB
     cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
@@ -119,14 +124,14 @@ def deepfake_classification_cnn_model():
 
 def prepare_model_for_training(cnn_model):
     """
-    1. optimizer=sgd is slow but provides good results
+    1. optimizer=i read that adam is common for cnn
     2. metrics=accuracy percentage is intuituive and works best because the classes in the training,
         images are distributed evenly
     3. loss=categorical_crossentropy suitable for 5 classes that are I converted to categorical,
         and it is good with softmax activation
 
     """
-    cnn_model.compile(optimizer='sgd', metrics=['accuracy'], loss='categorical_crossentropy')
+    cnn_model.compile(optimizer='adam', metrics=['accuracy'], loss='categorical_crossentropy')
     return cnn_model
 
 
@@ -140,10 +145,10 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     i use tensorboard for quick in browser performance checking
     """
     cnn_model.fit(
-        x=train_images, y=train_labels, batch_size=128, epochs=100,
-        validation_data=(validation_images, validation_labels),
+        x=train_images, y=train_labels, batch_size=256, epochs=120,
+        validation_data=(validation_images, validation_labels), class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
-                   EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True),
+                   EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True),
                    TensorBoard(log_dir=f'{save_directory}/TensorBoard_logs')
                    ]
     )
@@ -190,6 +195,7 @@ def main():
 
         # create and get the file path of the save directory
         save_directory, run_time = get_and_create_save_directory(True)
+        evaluation_file = open(f'{save_directory}/training_evaluation.txt', 'a')
 
         # get the model
         print(f'\n{15 * '>'} BUILDING MODEL {15 * '<'}\n')
@@ -212,7 +218,14 @@ def main():
         print('Validation loss: ', validation_loss)
         print(f'Accuracy gap (< 0.05 - 0.1): {training_accuracy - validation_accuracy}')
         print(f'\n{40 * '='} CNN MODEL TRAINING EVALUATION {40 * '='}\n')
-
+        evaluation_file.write(f'\n{40 * "="} CNN MODEL TRAINING EVALUATION {40 * "="}\n')
+        evaluation_file.write(f'\nTraining accuracy: {training_accuracy}\n')
+        evaluation_file.write(f'Training loss: {training_loss}\n')
+        evaluation_file.write(f'Validation accuracy: {validation_accuracy}\n')
+        evaluation_file.write(f'Validation loss: {validation_loss}\n')
+        evaluation_file.write(f'Accuracy gap (< 0.05 - 0.1): {training_accuracy - validation_accuracy}\n')
+        evaluation_file.write(f'\n{40 * "="} CNN MODEL TRAINING EVALUATION {40 * "="}\n')
+        
         # test the model
         print(f'\n{15 * '>'} TESTING MODEL {15 * '<'}\n')
         test = cnn_model.predict(test_images)
@@ -231,11 +244,10 @@ def main():
         validation_real_labels = np.argmax(validation_labels, axis=1)
         validation_confusion_matrix = confusion_matrix(validation_real_labels, validation_predicted_labels)
         # make a plot with heatmap for better represenation
-        plt.figure(figsize=(10, 8))
+        plt.figure(figsize=(10, 10))
         classes = [0, 1, 2, 3, 4]
         confusion_matrix_display = ConfusionMatrixDisplay(confusion_matrix=validation_confusion_matrix, display_labels=classes)
         confusion_matrix_display.plot(cmap='Greens', values_format='d')  # 'd' for integers
-        plt.title(f'Confusion matrix for run at {run_time}')
         plt.savefig(f'{save_directory}/confusion_matrix.png')
 
     except Exception as e:
