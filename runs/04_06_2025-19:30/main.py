@@ -88,32 +88,25 @@ def deepfake_classification_cnn_model():
 
     # CONVOLUTIUONAL BLOCK 1
     # layer - relu removes negative values; input_shape 100x100 w/ RGB
-    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (100, 100, 3)
+    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
     cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (100, 100, 3)
+    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
     # pooling layer reduces dimensions - downsampling
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     # add dropout to reduce overfitting by making the model not rely on a specific feature
     cnn_model.add(Dropout(0.25))
 
     # CONVOLUTIONAL BLOCK 2
-    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (50, 50, 64)
+    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 64)
     cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (50, 50, 64)
+    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 64)
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.25))
 
     # CONVOLUTIONAL BLOCK 3
-    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (25, 25, 128)
+    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))  # input_shape = (25, 25, 128)
     cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same'))
-    cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
-    cnn_model.add(Dropout(0.5))
-
-    # CONVOLUTIONAL BLOCK 4 because class 1 and 4 get confused
-    cnn_model.add(Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same'))
-    cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same'))
+    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.5))
 

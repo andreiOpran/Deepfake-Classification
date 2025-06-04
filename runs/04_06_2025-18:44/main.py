@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input, BatchNormalization, GlobalAveragePooling2D
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -83,42 +83,37 @@ def deepfake_classification_cnn_model():
 
     # image augumentation
     # i currently have overfitting so i try image augumentation
+    # for image augumentation, sizing, roations etc are first and then i do color changes,
+    # to prevent interpolation artifacts - leads to werid colors
+    # geometric changes
+    cnn_model.add(layers.RandomRotation(0.1))
     cnn_model.add(layers.RandomFlip('horizontal'))
-    cnn_model.add(layers.RandomRotation(0.05))
+    cnn_model.add(layers.RandomZoom(0.05))
+    # color changes
+    cnn_model.add(layers.RandomBrightness(0.1))
+    cnn_model.add(layers.RandomSaturation(0.1))
+    
 
     # CONVOLUTIUONAL BLOCK 1
     # layer - relu removes negative values; input_shape 100x100 w/ RGB
-    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (100, 100, 3)
-    cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (100, 100, 3)
+    cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
     # pooling layer reduces dimensions - downsampling
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     # add dropout to reduce overfitting by making the model not rely on a specific feature
     cnn_model.add(Dropout(0.25))
 
     # CONVOLUTIONAL BLOCK 2
-    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (50, 50, 64)
-    cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (50, 50, 64)
+    cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 64)
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.25))
 
     # CONVOLUTIONAL BLOCK 3
-    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same'))  # input_shape = (25, 25, 128)
-    cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu', padding='same'))
-    cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
-    cnn_model.add(Dropout(0.5))
-
-    # CONVOLUTIONAL BLOCK 4 because class 1 and 4 get confused
-    cnn_model.add(Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same'))
-    cnn_model.add(BatchNormalization())
-    cnn_model.add(Conv2D(filters=512, kernel_size=(3, 3), activation='relu', padding='same'))
+    cnn_model.add(Conv2D(filters=256, kernel_size=(3, 3), activation='relu'))  # input_shape = (25, 25, 128)
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.5))
 
     # convert results from array to vector (of size 12 x 12 x 256 = 36864)
-    cnn_model.add(GlobalAveragePooling2D())
+    cnn_model.add(Flatten())
     # take all the features from the convolutional blocks and turn them into final predicitions - classifier
     # l2 regularization to keep weights small and prevent overfitting
     cnn_model.add(Dense(units=256, activation='relu', kernel_regularizer=l2(0.001)))
@@ -160,7 +155,7 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     """
     cnn_model.fit(
         x=train_images, y=train_labels, batch_size=256, epochs=120,
-        validation_data=(validation_images, validation_labels), # class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
+        validation_data=(validation_images, validation_labels), class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True),
                    TensorBoard(log_dir=f'{save_directory}/TensorBoard_logs')
