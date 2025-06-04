@@ -4,7 +4,7 @@ from PIL import Image
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input
-from tensorflow.python.keras.regularizers import l2
+from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from datetime import datetime, timedelta
