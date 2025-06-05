@@ -70,8 +70,10 @@ def preprocess_images_and_labels(images, labels=None):
     if labels is not None:
         categorized_labels = to_categorical(labels, 5)  # convert to categorical with 5 classes
 
-    # normalize images to [0, 1]
-    normalized_images = images / 255.0
+    # normalize images with mean and standard deviation
+    mean = np.mean(images, axis=(0, 1, 2), keepdims=True)
+    std = np.std(images, axis=(0, 1, 2), keepdims=True)
+    normalized_images = (images - mean) / std
 
     return normalized_images, categorized_labels
 
@@ -243,7 +245,7 @@ def main():
         print(f'\n{15 * '>'} SAVING RESULTS {15 * '<'}\n')
         submission_csv = pd.read_csv(f'test.csv')
         submission_csv['label'] = test_labels
-        submission_csv[['image_id', 'label']].to_csv(f'{save_directory}/submission_{run_time}.csv', index=False)
+        submission_csv[['image_id', 'label']].to_csv(f'{save_directory}/submission.csv', index=False)
 
         # get confusion matrix
         print(f'\n{15 * '>'} SAVING CONFUSION MATRIX AT {save_directory}/confusion_matrix.png {15 * '<'}\n')

@@ -50,7 +50,12 @@ def load_images_and_labels(stage):
         image_path = f'{stage}/{image_id}.png'  # extract the image path
         image = Image.open(image_path)  # open the image
         image_array = np.array(image)  # convert to array
-        images.append(image_array)  # add to the list
+
+        # keep just hue (HSV = HueSaturationValue)
+        image_converted_to_hsv = cv2.cvtColor(image_array, cv2.COLOR_RGB2HSV)
+        hue_channel = image_converted_to_hsv[:, :, 0:1] # keep 3 dimensions
+
+        images.append(hue_channel)  # add to the list
 
         # extract the label from csv only for training and validation
         if stage != 'test':
@@ -80,7 +85,7 @@ def deepfake_classification_cnn_model():
     cnn_model = Sequential()
 
     # define shape layer
-    cnn_model.add(Input(shape=(100, 100, 3)))
+    cnn_model.add(Input(shape=(100, 100, 1)))
 
     # image augumentation
     # i currently have overfitting so i try image augumentation
@@ -90,7 +95,7 @@ def deepfake_classification_cnn_model():
     # CONVOLUTIUONAL BLOCK 1
     # layer - relu removes negative values; input_shape 100x100 w/ RGB
     cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
-    cnn_model.add(BatchNormalization())
+    # cnn_model.add(BatchNormalization())
     cnn_model.add(Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))  # input_shape = (100, 100, 3)
     # pooling layer reduces dimensions - downsampling
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -99,7 +104,7 @@ def deepfake_classification_cnn_model():
 
     # CONVOLUTIONAL BLOCK 2
     cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 64)
-    cnn_model.add(BatchNormalization())
+    # cnn_model.add(BatchNormalization())
     cnn_model.add(Conv2D(filters=128, kernel_size=(3, 3), activation='relu'))  # input_shape = (50, 50, 64)
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.25))
@@ -112,7 +117,7 @@ def deepfake_classification_cnn_model():
     cnn_model.add(Dropout(0.5))
 
     # convert results from array to vector (of size 12 x 12 x 256 = 36864)
-    cnn_model.add(Flatten())
+    cnn_model.add(GlobalAveragePooling2D())
     # take all the features from the convolutional blocks and turn them into final predicitions - classifier
     # l2 regularization to keep weights small and prevent overfitting
     cnn_model.add(Dense(units=256, activation='relu', kernel_regularizer=l2(0.001)))
@@ -153,7 +158,7 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     i use tensorboard for quick in browser performance checking
     """
     cnn_model.fit(
-        x=train_images, y=train_labels, batch_size=256, epochs=120,
+        x=train_images, y=train_labels, batch_size=256, epochs=75,
         validation_data=(validation_images, validation_labels), # class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True),
@@ -271,7 +276,8 @@ TODO:
     change cnn layers structure 
 
     batch norm dupa 2 convd
-    hue in loc de rgb cam prost
+    arhitectura de la res net fara weights (face overfitting)
+    hue in loc de rgb
     k fold validation
     cross validation bibliotecca
 """

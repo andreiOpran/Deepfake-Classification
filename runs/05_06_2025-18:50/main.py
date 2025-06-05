@@ -154,7 +154,7 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     """
     cnn_model.fit(
         x=train_images, y=train_labels, batch_size=256, epochs=120,
-        validation_data=(validation_images, validation_labels), # class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
+        validation_data=(validation_images, validation_labels), class_weight={0:1.0, 1:1.0, 2:1.0, 3:1.0, 4:1.5},
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True),
                    TensorBoard(log_dir=f'{save_directory}/TensorBoard_logs')
