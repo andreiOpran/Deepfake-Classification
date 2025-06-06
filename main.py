@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from PIL import Image
+from keras.src.callbacks import ReduceLROnPlateau
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Input, BatchNormalization, GlobalAveragePooling2D
@@ -9,6 +10,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoa
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from tensorflow.keras import layers
 from datetime import datetime, timedelta
+from tensorflow.keras.optimizers import Adam
 import os
 import shutil
 import matplotlib.pyplot as plt
@@ -111,16 +113,22 @@ def deepfake_classification_cnn_model():
     cnn_model.add(MaxPooling2D(pool_size=(2, 2)))
     cnn_model.add(Dropout(0.5))
 
-    # convert results from array to vector (of size 12 x 12 x 256 = 36864)
-    cnn_model.add(Flatten())
-    # take all the features from the convolutional blocks and turn them into final predicitions - classifier
-    # l2 regularization to keep weights small and prevent overfitting
-    cnn_model.add(Dense(units=256, activation='relu', kernel_regularizer=l2(0.001)))
-    cnn_model.add(Dropout(0.5))  # too many weights (36864 x 256) that can cause overfitting
-    # another layer for more refining
-    cnn_model.add(Dense(units=128, activation='relu', kernel_regularizer=l2(0.001)))
-    cnn_model.add(Dropout(0.3))  # too many weights again (256 x 128)
-    # the 5 classes of the deepfake classification, softmax converts scores to probs
+    # # convert results from array to vector (12 x 12 x 256 feature maps, 36864 values)
+    # cnn_model.add(Flatten())
+    # # take all the features from the convolutional blocks and turn them into final predicitions - classifier
+    # # l2 regularization to keep weights small and prevent overfitting
+    # cnn_model.add(Dense(units=256, activation='relu', kernel_regularizer=l2(0.001)))
+    # cnn_model.add(Dropout(0.5))  # too many weights (36864 x 256) that can cause overfitting
+    # # another layer for more refining
+    # cnn_model.add(Dense(units=128, activation='relu', kernel_regularizer=l2(0.001)))
+    # cnn_model.add(Dropout(0.3))  # too many weights again (256 x 128)
+    # # the 5 classes of the deepfake classification, softmax converts scores to probs
+    # cnn_model.add(Dense(5, activation='softmax'))
+
+    # reduce parameters for morew stable training
+    cnn_model.add(GlobalAveragePooling2D())  # for better generalization outputs 256 values instead of 36864
+    cnn_model.add(Dense(units=64, activation='relu', kernel_regularizer=l2(0.001)))
+    cnn_model.add(Dropout(0.5))
     cnn_model.add(Dense(5, activation='softmax'))
 
     print(f'\n{40 * '='} CNN MODEL SHAPE {40 * '='}\n')
@@ -132,14 +140,13 @@ def deepfake_classification_cnn_model():
 
 def prepare_model_for_training(cnn_model):
     """
-    1. optimizer=i read that adam is common for cnn
+    1. optimizer=i read that adam is common for cnn, with learning rate that is 1/2 from default
     2. metrics=accuracy percentage is intuituive and works best because the classes in the training,
         images are distributed evenly
     3. loss=categorical_crossentropy suitable for 5 classes that are I converted to categorical,
         and it is good with softmax activation
-
     """
-    cnn_model.compile(optimizer='adam', metrics=['accuracy'], loss='categorical_crossentropy')
+    cnn_model.compile(optimizer=Adam(learning_rate=0.0005), metrics=['accuracy'], loss='categorical_crossentropy')
     return cnn_model
 
 
@@ -150,6 +157,8 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     save the best model with modelcheckpoint callback
     earlystopping checks the validation loss and if it does not improve for 5 epochs it ends the training,
         keeping the best weights
+    reduceLRonPlateau: after epoch 20 learning rate jumps up and down so we reduce learning rate,
+        that is too high after first epochs
     i use tensorboard for quick in browser performance checking
     """
     cnn_model.fit(
@@ -157,6 +166,7 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
         validation_data=(validation_images, validation_labels),  # class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True),
+                   ReduceLROnPlateau(monitor='val_loss', factor=0.25, patience=7, min_lr=1e-5, verbose=1),
                    TensorBoard(log_dir=f'{save_directory}/TensorBoard_logs')
                    ]
     )
