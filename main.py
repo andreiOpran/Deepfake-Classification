@@ -154,7 +154,7 @@ def train_cnn_model(cnn_model, train_images, train_labels, validation_images, va
     """
     cnn_model.fit(
         x=train_images, y=train_labels, batch_size=256, epochs=120,
-        validation_data=(validation_images, validation_labels), # class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
+        validation_data=(validation_images, validation_labels),  # class_weight={0:0.95, 1:1.4, 2:1.1, 3:0.7, 4:1.8},
         callbacks=[ModelCheckpoint(filepath=f'{save_directory}/best_deepfake_classification_cnn_model.keras'),
                    EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True),
                    TensorBoard(log_dir=f'{save_directory}/TensorBoard_logs')
@@ -233,7 +233,7 @@ def main():
         evaluation_file.write(f'Validation loss: {validation_loss}\n')
         evaluation_file.write(f'Accuracy gap (< 0.05 - 0.1): {training_accuracy - validation_accuracy}\n')
         evaluation_file.write(f'\n{40 * "="} CNN MODEL TRAINING EVALUATION {40 * "="}\n')
-        
+
         # test the model
         print(f'\n{15 * '>'} TESTING MODEL {15 * '<'}\n')
         test = cnn_model.predict(test_images)
