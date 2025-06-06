@@ -1,0 +1,8 @@
+
+======================================== RANDOM FOREST TRAINING EVALUATION ========================================
+
+Training accuracy: 1.0
+Validation accuracy: 0.6152
+Accuracy gap: 0.38480000000000003
+
+======================================== RANDOM FOREST TRAINING EVALUATION ========================================

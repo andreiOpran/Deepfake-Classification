@@ -66,7 +66,7 @@ def preprocess_images_and_labels(images, labels=None):
 
 
 def deepfake_classification_model():
-    model = RandomForestClassifier(n_estimators=700, max_depth=15, n_jobs=-1, verbose=2)
+    model = RandomForestClassifier(n_estimators=400, max_depth=40, n_jobs=-1, verbose=2)
     return model
 
 
