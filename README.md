@@ -287,20 +287,28 @@ CNNs show clear diagonal predicts in their confusion matrices, indicating effect
 ### Best CNN Architecture (`06_06_2025-14:55`)
 ```
 Input: RGB Image Tensor (Height × Width × 3)
-├── Conv2D(64 filters, 3×3 kernel) + BatchNormalization + ReLU
+├── RandomFlip(horizontal)
+├── RandomRotation(0.05)
+
+├── Conv2D(64 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
+├── Conv2D(64 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
 ├── MaxPooling2D(2×2) + Dropout(0.25)
-├── Conv2D(128 filters, 3×3 kernel) + BatchNormalization + ReLU
-├── Conv2D(128 filters, 3×3 kernel) + BatchNormalization + ReLU
+
+├── Conv2D(128 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
+├── Conv2D(128 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
 ├── MaxPooling2D(2×2) + Dropout(0.25)
-├── Conv2D(256 filters, 3×3 kernel) + BatchNormalization + ReLU
-├── Conv2D(256 filters, 3×3 kernel) + BatchNormalization + ReLU
-├── MaxPooling2D(2×2) + Dropout(0.25)
-├── Conv2D(512 filters, 3×3 kernel) + BatchNormalization + ReLU
-├── Conv2D(512 filters, 3×3 kernel) + BatchNormalization + ReLU
-├── MaxPooling2D(2×2) + Dropout(0.25)
+
+├── Conv2D(256 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
+├── Conv2D(256 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
+├── MaxPooling2D(2×2) + Dropout(0.5)
+
+├── Conv2D(512 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
+├── Conv2D(512 filters, 3×3 kernel, padding='same') + BatchNormalization + ReLU
+├── MaxPooling2D(2×2) + Dropout(0.5)
+
 ├── GlobalAveragePooling2D
-├── Dense(256 units, ReLU) + L2(0.01) + Dropout(0.5)
-├── Dense(128 units, ReLU) + L2(0.01) + Dropout(0.5)
+├── Dense(256 units, ReLU, L2(0.01)) + Dropout(0.5)
+├── Dense(128 units, ReLU, L2(0.01)) + Dropout(0.4)
 └── Dense(5 units, Softmax)
 ```
 
