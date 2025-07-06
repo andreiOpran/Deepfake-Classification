@@ -1,5 +1,4 @@
 # Deepfake Image Classification - Project Documentation
-### Andrei Opran - group 242
 
 ## Index
 - [The Project](#1-the-project)  
